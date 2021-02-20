@@ -85,7 +85,7 @@ with dbing.openDB(name="edy") as db, keeping.openKeep(name="edy") as kpr:
     keys = [verfers[0].qb64]
 
     nxt = coring.Nexter(digs=[digers[0].qb64]).qb64
-    srdr = eventing.incept(keys=keys, nxt=nxt, code=coring.CryOneDex.Ed25519)  # !!!!! using Self-Addressing code for next key even though the rest of the identifier is using basic
+    srdr = eventing.incept(keys=keys, nxt=nxt, code=coring.CryOneDex.Ed25519)
     print(srdr.raw.decode("utf-8"))
     print()
 
@@ -158,7 +158,64 @@ with dbing.openDB(name="edy") as db, keeping.openKeep(name="edy") as kpr:
 ```
 
 #### Event Signing
-In order for an event to be valid it must be signed.
+In order for an event to be valid it must be signed.  The Manager object can be used to sign an event. This will create
+signatures, but they are not yet attached to the event.  See the section below for how to attach them to the event by 
+creating an event message.
+
+```python
+import keri.core.eventing as eventing
+import keri.core.coring as coring
+import keri.base.keeping as keeping
+import keri.db.dbing as dbing
+
+
+with dbing.openDB(name="edy") as db, keeping.openKeep(name="edy") as kpr:
+    # -----------------------Basic Transferable Identifier----------------------
+    salt = coring.Salter().qb64
+
+    # Init key pair manager
+    mgr = keeping.Manager(keeper=kpr, salt=salt)
+    verfers, digers = mgr.incept(icount=1, ncount=1)
+
+    keys = [verfers[0].qb64]
+
+    nxt = coring.Nexter(digs=[digers[0].qb64]).qb64
+    srdr = eventing.incept(keys=keys, nxt=nxt, code=coring.CryOneDex.Ed25519)
+    
+    # Create Signatures
+    sigers = mgr.sign(ser=srdr.raw, verfers=verfers)
+```
+
+#### Creating An Event Message
+Creating an event message involves appending count code prefixes and signatures to an event object.  
+There is a function that will handle all this for you called messagize().
+```python
+import keri.core.eventing as eventing
+import keri.core.coring as coring
+import keri.base.keeping as keeping
+import keri.db.dbing as dbing
+
+
+with dbing.openDB(name="edy") as db, keeping.openKeep(name="edy") as kpr:
+    # -----------------------Basic Transferable Identifier----------------------
+    salt = coring.Salter().qb64
+
+    # Init key pair manager
+    mgr = keeping.Manager(keeper=kpr, salt=salt)
+    verfers, digers = mgr.incept(icount=1, ncount=1)
+
+    keys = [verfers[0].qb64]
+
+    nxt = coring.Nexter(digs=[digers[0].qb64]).qb64
+    srdr = eventing.incept(keys=keys, nxt=nxt, code=coring.CryOneDex.Ed25519)
+    
+    sigers = mgr.sign(ser=srdr.raw, verfers=verfers)
+    
+    # Create the message
+    msg = eventing.messagize(srdr, sigers)
+    print(msg)
+    print()
+```
 
 #### Rotation
 
